@@ -5,7 +5,7 @@ let intervalId = 0
 
 function connect() {
   console.log('Connecting to WebSocket...');
-  const ws = new WebSocket('ws://localhost:12345');
+  const ws = new WebSocket('wss://internal.khanhduong.dev:61386');
 
   ws.onopen = function () {
     console.log('WebSocket connection opened');

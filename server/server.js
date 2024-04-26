@@ -40,7 +40,6 @@ wss.on('connection', function connection(ws) {
 });
 
 // Start the server
-const PORT = process.env.PORT || 12345;
-server.listen(PORT, () => {
-  console.log(`Server started on http://localhost:${PORT}`);
+server.listen(12345, () => {
+  console.log(`Server started on http://localhost:12345`);
 });

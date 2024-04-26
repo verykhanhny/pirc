@@ -1,4 +1,4 @@
-const ws = new WebSocket('ws://localhost:12345');
+const ws = new WebSocket('wss://internal.khanhduong.dev:61386');
 const pressedKeys = {}; // Object to track pressed keys
 
 // When a key is pressed down
