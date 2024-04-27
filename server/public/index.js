@@ -1,5 +1,8 @@
+// Create the WebSocket
 const ws = new WebSocket('wss://internal.khanhduong.dev:61386');
-const pressedKeys = {}; // Object to track pressed keys
+
+// Object to track pressed keys
+const pressedKeys = {};
 
 // When a key is pressed down
 document.addEventListener('keydown', (event) => {

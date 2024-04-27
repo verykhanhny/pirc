@@ -5,9 +5,4 @@ services:
     container_name: pirc-server
     image: pirc-server:latest
     restart: always
-    networks:
-      - dev_network
-
-networks:
-  dev_network:
-    external: true
+    network_mode: host

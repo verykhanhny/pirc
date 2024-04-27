@@ -1,26 +1,76 @@
 const express = require('express');
-const http = require('http');
-const WebSocket = require('ws');
-
+const session = require('express-session');
 const app = express();
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+require('express-ws')(app);
+require('dotenv').config();
 
-// Serve HTML page
-app.get('/', (req, res) => {
+// Use sessions for tracking logged-in users
+app.use(session({
+  name: "pirc.session",
+  secret: process.env.secret,
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    maxAge: 2592000000
+  },
+}));
+
+// Middleware to check if user is logged in
+function requireLogin(req, res, next) {
+  if (req.session && req.session.user) {
+    next(); // User is logged in, proceed
+  } else {
+    res.redirect('/login'); // User is not logged in, redirect to login page
+  }
+}
+
+function alreadyLogin(req, res, next) {
+  if (req.session && req.session.user) {
+    res.redirect('/'); // User is logged in, redirect to root page
+  } else {
+    next();
+  }
+}
+
+// Login route
+app.get('/login', alreadyLogin, (req, res) => {
+  res.sendFile(__dirname + '/public/login.html');
+});
+app.get('/login.js', alreadyLogin, (req, res) => {
+  res.sendFile(__dirname + '/public/login.js');
+});
+
+// Post login route
+app.post('/login', express.json(), (req, res) => {
+  const { username, password } = req.body;
+  if (username === process.env.username && password === process.env.password) {
+    req.session.user = username; // Set user in session
+    res.send("Authenticated")
+  } else {
+    res.status(401).send("Unauthenticated")
+  }
+});
+
+// Root route
+app.get('/', requireLogin, (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
-app.get('/script.js', (req, res) => {
-  res.sendFile(__dirname + '/public/script.js');
+app.get('/index.js', requireLogin, (req, res) => {
+  res.sendFile(__dirname + '/public/index.js');
 });
 
 // Store client connections
 const clients = new Set();
 
 // WebSocket connection event
-wss.on('connection', function connection(ws) {
+app.ws('/', function connection(ws, req) {
   console.log('A new client connected');
-  clients.add(ws);
+  if (req.session && req.session.user) {
+    clients.add(ws);
+  } else {
+    ws.send("Unauthenticated");
+    ws.close();
+  }
 
   // When receiving a message from a client
   ws.on('message', function incoming(message) {
@@ -40,6 +90,6 @@ wss.on('connection', function connection(ws) {
 });
 
 // Start the server
-server.listen(12345, () => {
+app.listen(12345, () => {
   console.log(`Server started on http://localhost:12345`);
 });
