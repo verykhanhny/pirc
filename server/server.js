@@ -1,8 +1,10 @@
 const express = require('express');
+const ws = require('express-ws');
 const session = require('express-session');
-const app = express();
-require('express-ws')(app);
 require('dotenv').config();
+
+const app = express();
+ws(app);
 
 // Use sessions for tracking logged-in users
 app.use(session({
@@ -66,9 +68,14 @@ const clients = new Set();
 app.ws('/', function connection(ws, req) {
   console.log('A new client connected');
   if (req.session && req.session.user) {
+    console.log('Client authenticated');
     clients.add(ws);
   } else {
-    ws.send("Unauthenticated");
+    console.log('Client unauthenticated');
+    ws.send(JSON.stringify({
+      code: 401,
+      message: 'Unauthenticated'
+    }));
     ws.close();
   }
 
@@ -76,8 +83,8 @@ app.ws('/', function connection(ws, req) {
   ws.on('message', function incoming(message) {
     console.log('Received: %s', message);
     for (let client of clients) {
-      if (client !== ws && client.readyState === WebSocket.OPEN) {
-        client.send(message.toString())
+      if (client !== ws && client.readyState === ws.OPEN) {
+        client.send(message.toString());
       }
     }
   });

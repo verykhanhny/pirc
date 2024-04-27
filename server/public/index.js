@@ -9,7 +9,7 @@ document.addEventListener('keydown', (event) => {
   if (!pressedKeys[event.key]) {
     pressedKeys[event.key] = true
     console.log('Key pressed:', event.key);
-    ws.send(JSON.stringify({"key": event.key, "down": true})); // Send the key to the server
+    ws.send(JSON.stringify({key: event.key, down: true})); // Send the key to the server
   }
 });
 
@@ -17,7 +17,7 @@ document.addEventListener('keydown', (event) => {
 document.addEventListener('keyup', (event) => {
   pressedKeys[event.key] = false
   console.log('Key lifted:', event.key);
-  ws.send(JSON.stringify({"key": event.key, "down": false})); // Send the key to the server
+  ws.send(JSON.stringify({key: event.key, down: false})); // Send the key to the server
 });
 
 ws.onopen = function () {
@@ -25,10 +25,8 @@ ws.onopen = function () {
 };
 
 ws.onmessage = function (event) {
-  const messagesDiv = document.getElementById('messages');
-  const messageDiv = document.createElement('div');
+  const messageDiv = document.getElementById('message');
   messageDiv.textContent = event.data;
-  messagesDiv.appendChild(messageDiv);
 };
 
 ws.onclose = function () {
