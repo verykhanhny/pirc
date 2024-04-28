@@ -1,6 +1,7 @@
 const express = require("express");
 const ws = require("express-ws");
 const session = require("express-session");
+const crypto = require("crypto");
 require("dotenv").config();
 
 const app = express();
@@ -43,11 +44,21 @@ app.get("/login", alreadyLogin, (req, res) => {
 app.get("/login.js", alreadyLogin, (req, res) => {
   res.sendFile(__dirname + "/public/login.js");
 });
+app.get("/salt", (req, res) => {
+  res.send(process.env.salt1);
+});
 
 // Post login route
 app.post("/login", express.json(), (req, res) => {
   const { username, password } = req.body;
-  if (username === process.env.username && password === process.env.password) {
+  const saltedPassword = password + process.env.salt2;
+  const hash = crypto.createHash("sha256");
+  hash.update(saltedPassword);
+  const hashedPassword = hash.digest("hex");
+  if (
+    username === process.env.username &&
+    hashedPassword === process.env.password
+  ) {
     req.session.user = username; // Set user in session
     res.send("Authenticated");
   } else {
