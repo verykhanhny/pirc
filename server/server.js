@@ -54,14 +54,13 @@ app.post("/login", express.json(), (req, res) => {
   crypto.pbkdf2(
     password,
     process.env.server_salt,
-    100000,
+    1000000,
     64,
     "sha512",
     (err, derivedKey) => {
       if (err) {
         res.status(500).send("Internal Server Error");
       } else {
-        console.log(derivedKey.toString("hex"));
         if (
           username === process.env.username &&
           derivedKey.toString("hex") === process.env.admin_key
