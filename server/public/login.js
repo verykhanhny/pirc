@@ -59,7 +59,7 @@ function hashPassword(password, salt, callback) {
 
   // Hash the password using SHA-256
   window.crypto.subtle
-    .digest("SHA-256", passwordBuffer)
+    .digest("SHA-512", passwordBuffer)
     .then(function (hashBuffer) {
       // Convert the hash ArrayBuffer to a hex string
       var hashArray = Array.from(new Uint8Array(hashBuffer));

@@ -51,7 +51,7 @@ function getSalt(callback) {
 function login() {
   getSalt((salt) => {
     const saltedPassword = process.env.password + salt;
-    const hash = crypto.createHash("sha256");
+    const hash = crypto.createHash("sha512");
     hash.update(saltedPassword);
     const hashedPassword = hash.digest("hex");
     const loginData = JSON.stringify({

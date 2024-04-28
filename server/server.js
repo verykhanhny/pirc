@@ -45,25 +45,35 @@ app.get("/login.js", alreadyLogin, (req, res) => {
   res.sendFile(__dirname + "/public/login.js");
 });
 app.get("/salt", (req, res) => {
-  res.send(process.env.salt1);
+  res.send(process.env.client_salt);
 });
 
 // Post login route
 app.post("/login", express.json(), (req, res) => {
   const { username, password } = req.body;
-  const saltedPassword = password + process.env.salt2;
-  const hash = crypto.createHash("sha256");
-  hash.update(saltedPassword);
-  const hashedPassword = hash.digest("hex");
-  if (
-    username === process.env.username &&
-    hashedPassword === process.env.password
-  ) {
-    req.session.user = username; // Set user in session
-    res.send("Authenticated");
-  } else {
-    res.status(401).send("Unauthenticated");
-  }
+  crypto.pbkdf2(
+    password,
+    process.env.server_salt,
+    100000,
+    64,
+    "sha512",
+    (err, derivedKey) => {
+      if (err) {
+        res.status(500).send("Internal Server Error");
+      } else {
+        console.log(derivedKey.toString("hex"));
+        if (
+          username === process.env.username &&
+          derivedKey.toString("hex") === process.env.admin_key
+        ) {
+          req.session.user = username; // Set user in session
+          res.send("Authenticated");
+        } else {
+          res.status(401).send("Unauthenticated");
+        }
+      }
+    },
+  );
 });
 
 // Root route
