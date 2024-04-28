@@ -9,6 +9,9 @@ let cookie = [];
 // Send data in chunks every second
 let intervalId = 0;
 
+// Key currently pressed down
+const keydown = new Set();
+
 function getSalt(callback) {
   const options = {
     hostname: "internal.khanhduong.dev",
@@ -126,6 +129,51 @@ function connect() {
     // Got error so try to login again
     if (message.code) {
       ws.close();
+    }
+
+    const { key, down } = message;
+    switch (key.toLowerCase()) {
+      case "w":
+        if (down) {
+          if (!keydown["s"]) {
+            // Call pi to go forward
+            keydown.add("w");
+          }
+        } else {
+          keydown.delete("w");
+        }
+        break;
+      case "a":
+        if (down) {
+          if (!keydown["d"]) {
+            // Call pi to turn left
+            keydown.add("a");
+          }
+        } else {
+          keydown.delete("a");
+        }
+        break;
+      case "s":
+        if (down) {
+          if (!keydown["w"]) {
+            // Call pi to go backward
+            keydown.add("s");
+          }
+        } else {
+          keydown.delete("s");
+        }
+        break;
+      case "d":
+        if (down) {
+          if (!keydown["a"]) {
+            // Call pi to turn right
+            keydown.add("d");
+          }
+        } else {
+          keydown.delete("d");
+        }
+        break;
+      default:
     }
   };
 
