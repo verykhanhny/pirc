@@ -10,7 +10,7 @@ let cookie = [];
 let intervalId = 0;
 
 // Key currently pressed down
-const keydown = new Set();
+const keydown = {};
 
 function getSalt(callback) {
   const options = {
@@ -137,40 +137,52 @@ function connect() {
         if (down) {
           if (!keydown["s"]) {
             // Call pi to go forward
-            keydown.add("w");
+            keydown["w"] = true;
           }
         } else {
-          keydown.delete("w");
+          if (keydown["w"]) {
+            // Stop going forward
+          }
+          keydown["w"] = false;
         }
         break;
       case "a":
         if (down) {
           if (!keydown["d"]) {
             // Call pi to turn left
-            keydown.add("a");
+            keydown["a"] = true;
           }
         } else {
-          keydown.delete("a");
+          if (keydown["a"]) {
+            // Stop turning left
+          }
+          keydown["a"] = false;
         }
         break;
       case "s":
         if (down) {
           if (!keydown["w"]) {
             // Call pi to go backward
-            keydown.add("s");
+            keydown["s"] = true;
           }
         } else {
-          keydown.delete("s");
+          if (keydown["s"]) {
+            // Stop going backward
+          }
+          keydown["s"] = false;
         }
         break;
       case "d":
         if (down) {
           if (!keydown["a"]) {
             // Call pi to turn right
-            keydown.add("d");
+            keydown["d"] = true;
           }
         } else {
-          keydown.delete("d");
+          if (keydown["d"]) {
+            // Stop turning right
+          }
+          keydown["d"] = false;
         }
         break;
       default:
