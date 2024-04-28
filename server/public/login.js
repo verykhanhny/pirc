@@ -1,5 +1,4 @@
 function login() {
-  console.log("logging in")
   // Create an XMLHttpRequest object
   const xhr = new XMLHttpRequest();
 
@@ -76,8 +75,7 @@ function hashPassword(password, salt, callback) {
 
 function failedLogin() {
   // Failed login
-  document.getElementById("message").innerText =
-    `Login failed.`;
+  document.getElementById("message").innerText = `Login failed.`;
   document.getElementById("username").value = "";
   document.getElementById("password").value = "";
 }
