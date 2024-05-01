@@ -17,7 +17,7 @@ app.use(
     cookie: {
       maxAge: 2592000000,
     },
-  }),
+  })
 );
 
 // Middleware to check if user is logged in
@@ -71,7 +71,7 @@ app.post("/login", express.json(), (req, res) => {
           res.status(401).send("Unauthenticated");
         }
       }
-    },
+    }
   );
 });
 
@@ -98,7 +98,7 @@ app.ws("/", function connection(ws, req) {
       JSON.stringify({
         code: 401,
         message: "Unauthenticated",
-      }),
+      })
     );
     ws.close();
   }
