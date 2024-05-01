@@ -96,8 +96,9 @@ def generate_data():
     return str(random.random())
 
 
-dotenv.load_dotenv()
-base_url = f"{os.environ.get('hostname')}:{os.environ.get('port')}"
-while True:
-    login(base_url)
-    time.sleep(3)
+if __name__ == "__main__":
+    dotenv.load_dotenv()
+    base_url = f"{os.environ.get('hostname')}:{os.environ.get('port')}"
+    while True:
+        login(base_url)
+        time.sleep(3)
