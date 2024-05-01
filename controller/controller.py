@@ -9,6 +9,7 @@ import random
 import dotenv
 
 
+# Get the salt from the server to append to the password
 def get_salt(base_url):
     try:
         response = requests.get(f"https://{base_url}/salt")
@@ -18,6 +19,7 @@ def get_salt(base_url):
         raise Exception(f"Error getting salt: {e}")
 
 
+# Salt the password and hash it before sending to server for authenticating
 def auth(base_url, salt):
     salted_password = os.environ.get("password") + salt
     hashed_password = hashlib.sha512(salted_password.encode("utf-8")).hexdigest()
@@ -32,6 +34,7 @@ def auth(base_url, salt):
         raise Exception(f"Login failed: {e}")
 
 
+# Authenticate and connect to websocket
 def login(base_url):
     try:
         salt = get_salt(base_url)
@@ -41,6 +44,7 @@ def login(base_url):
         print(f"Error logging in: {e}")
 
 
+# Handler for incoming commands from server
 async def on_message(ws):
     while True:
         try:
@@ -52,6 +56,7 @@ async def on_message(ws):
             raise Exception(f"Error receiving message: {e}")
 
 
+# Handler to stream video to server
 async def stream(ws):
     while True:
         try:
@@ -62,6 +67,7 @@ async def stream(ws):
             raise Exception(f"Error sending message: {e}")
 
 
+# Connect a websocket to the server using the session cookie
 async def connect(base_url, cookie):
     print("Connecting to WebSocket...")
     try:
@@ -70,6 +76,7 @@ async def connect(base_url, cookie):
         ) as ws:
             try:
                 print("WebSocket connection opened")
+                # Start the handlers
                 tasks = [
                     asyncio.create_task(stream(ws)),
                     asyncio.create_task(on_message(ws)),
