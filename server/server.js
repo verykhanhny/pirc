@@ -2,8 +2,9 @@ const express = require("express");
 const ws = require("express-ws");
 const session = require("express-session");
 const crypto = require("crypto");
-require("dotenv").config();
+const dotenv = require("dotenv");
 
+dotenv.config();
 const app = express();
 ws(app);
 
