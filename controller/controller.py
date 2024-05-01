@@ -18,7 +18,7 @@ BASE_URL = f"{os.environ.get('hostname')}:{os.environ.get('port')}"
 
 def get_salt():
     try:
-        response = requests.get(f"http://{BASE_URL}/salt")
+        response = requests.get(f"https://{BASE_URL}/salt")
         response.raise_for_status()
         return response.text
     except Exception as e:
@@ -31,7 +31,7 @@ def auth(salt):
     login_data = {"username": os.environ.get("username"), "password": hashed_password}
 
     try:
-        response = requests.post(f"http://{BASE_URL}/login", json=login_data)
+        response = requests.post(f"https://{BASE_URL}/login", json=login_data)
         response.raise_for_status()
         print("Login successful!")
         return response.headers["set-cookie"]
@@ -73,7 +73,7 @@ async def connect(cookie):
     print("Connecting to WebSocket...")
     try:
         async with websockets.connect(
-            f"ws://{BASE_URL}", extra_headers={"Cookie": cookie}
+            f"wss://{BASE_URL}", extra_headers={"Cookie": cookie}
         ) as ws:
             try:
                 print("WebSocket connection opened")
