@@ -80,22 +80,26 @@ function failedLogin() {
   document.getElementById("password").value = "";
 }
 
-// Event listener for key press in username field
-document
-  .getElementById("username")
-  .addEventListener("keypress", function (event) {
-    // Check if the key pressed is Enter
-    if (event.key === "Enter") {
-      login(); // Call the function
-    }
-  });
+function main() {
+  // Event listener for key press in username field
+  document
+    .getElementById("username")
+    .addEventListener("keypress", function (event) {
+      // Check if the key pressed is Enter
+      if (event.key === "Enter") {
+        login(); // Call the function
+      }
+    });
 
-// Event listener for key press in password field
-document
-  .getElementById("password")
-  .addEventListener("keypress", function (event) {
-    // Check if the key pressed is Enter
-    if (event.key === "Enter") {
-      login(); // Call the function
-    }
-  });
+  // Event listener for key press in password field
+  document
+    .getElementById("password")
+    .addEventListener("keypress", function (event) {
+      // Check if the key pressed is Enter
+      if (event.key === "Enter") {
+        login(); // Call the function
+      }
+    });
+}
+
+main();
