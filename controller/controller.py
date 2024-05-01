@@ -49,7 +49,7 @@ async def on_message(ws):
             if "code" in message:
                 return
         except Exception as e:
-            raise Exception(f"Error recieving message: {e}")
+            raise Exception(f"Error receiving message: {e}")
 
 
 async def stream(ws):
