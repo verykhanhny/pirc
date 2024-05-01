@@ -6,32 +6,25 @@ import hashlib
 import os
 import time
 import random
-
-# Load environment variables
-from dotenv import load_dotenv
-
-load_dotenv()
-
-# Base URL
-BASE_URL = f"{os.environ.get('hostname')}:{os.environ.get('port')}"
+import dotenv
 
 
-def get_salt():
+def get_salt(base_url):
     try:
-        response = requests.get(f"http://{BASE_URL}/salt")
+        response = requests.get(f"https://{base_url}/salt")
         response.raise_for_status()
         return response.text
     except Exception as e:
         raise Exception(f"Error getting salt: {e}")
 
 
-def auth(salt):
+def auth(base_url, salt):
     salted_password = os.environ.get("password") + salt
     hashed_password = hashlib.sha512(salted_password.encode("utf-8")).hexdigest()
     login_data = {"username": os.environ.get("username"), "password": hashed_password}
 
     try:
-        response = requests.post(f"http://{BASE_URL}/login", json=login_data)
+        response = requests.post(f"https://{base_url}/login", json=login_data)
         response.raise_for_status()
         print("Login successful!")
         return response.headers["set-cookie"]
@@ -39,11 +32,11 @@ def auth(salt):
         raise Exception(f"Login failed: {e}")
 
 
-def login():
+def login(base_url):
     try:
-        salt = get_salt()
-        cookie = auth(salt)
-        asyncio.run(connect(cookie))
+        salt = get_salt(base_url)
+        cookie = auth(base_url, salt)
+        asyncio.run(connect(base_url, cookie))
     except Exception as e:
         print(f"Error logging in: {e}")
 
@@ -56,7 +49,7 @@ async def on_message(ws):
             if "code" in message:
                 return
         except Exception as e:
-            raise Exception(f"Error recieving message: {e}")
+            raise Exception(f"Error receiving message: {e}")
 
 
 async def stream(ws):
@@ -69,11 +62,11 @@ async def stream(ws):
             raise Exception(f"Error sending message: {e}")
 
 
-async def connect(cookie):
+async def connect(base_url, cookie):
     print("Connecting to WebSocket...")
     try:
         async with websockets.connect(
-            f"ws://{BASE_URL}", extra_headers={"Cookie": cookie}
+            f"wss://{base_url}", extra_headers={"Cookie": cookie}
         ) as ws:
             try:
                 print("WebSocket connection opened")
@@ -96,6 +89,8 @@ def generate_data():
     return str(random.random())
 
 
+dotenv.load_dotenv()
+base_url = f"{os.environ.get('hostname')}:{os.environ.get('port')}"
 while True:
-    login()
+    login(base_url)
     time.sleep(3)
