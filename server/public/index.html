@@ -4,12 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PiRC</title>
-    <script src="/index.js" defer></script>
+    <script type="text/javascript" src="/jmuxer.js" defer></script>
+    <script type="text/javascript" src="/index.js" defer></script>
   </head>
   <body>
     <h1>PiRC Controller</h1>
-    <input type="text" id="messageInput" placeholder="Enter message" />
-    <button onclick="sendMessage()">Send</button>
+    <video id="videoPlayer0" width="640" height="480" controls autoplay></video>
+    <video id="videoPlayer1" width="640" height="480" controls autoplay></video>
     <div id="message"></div>
   </body>
 </html>

@@ -1,13 +1,26 @@
-function sendMessage() {
-  const messageInput = document.getElementById("messageInput");
-  const message = messageInput.value;
-  ws.send(message);
-  messageInput.value = "";
-}
-
 function main() {
-  // Create the WebSocket
-  const ws = new WebSocket("wss://internal.khanhduong.dev:61386");
+  // Create the WebSockets
+  const controlsWs = new WebSocket("wss://internal.khanhduong.dev:47653");
+  const stream0Ws = new WebSocket(
+    "wss://internal.khanhduong.dev:47653/stream0"
+  );
+  const stream1Ws = new WebSocket(
+    "wss://internal.khanhduong.dev:47653/stream1"
+  );
+  stream0Ws.binaryType = "arraybuffer";
+  stream1Ws.binaryType = "arraybuffer";
+  var jmuxer0 = new JMuxer({
+    node: "videoPlayer0",
+    mode: "video",
+    flushingTime: 1000,
+    fps: 30,
+  });
+  var jmuxer1 = new JMuxer({
+    node: "videoPlayer1",
+    mode: "video",
+    flushingTime: 1000,
+    fps: 30,
+  });
 
   // Object to track pressed keys
   const pressedKeys = {};
@@ -17,7 +30,7 @@ function main() {
     if (!pressedKeys[event.key]) {
       pressedKeys[event.key] = true;
       console.log("Key pressed:", event.key);
-      ws.send(JSON.stringify({ key: event.key, down: true })); // Send the key to the server
+      controlsWs.send(JSON.stringify({ key: event.key, down: true })); // Send the key to the server
     }
   });
 
@@ -25,20 +38,33 @@ function main() {
   document.addEventListener("keyup", (event) => {
     pressedKeys[event.key] = false;
     console.log("Key lifted:", event.key);
-    ws.send(JSON.stringify({ key: event.key, down: false })); // Send the key to the server
+    controlsWs.send(JSON.stringify({ key: event.key, down: false })); // Send the key to the server
   });
 
-  ws.onopen = function () {
-    console.log("WebSocket connection opened");
+  controlsWs.onopen = function () {
+    console.log("Controls connection opened");
   };
-
-  ws.onmessage = function (event) {
-    const messageDiv = document.getElementById("message");
-    messageDiv.textContent = event.data;
+  stream0Ws.onopen = function () {
+    console.log("Stream 0 connection opened");
   };
-
-  ws.onclose = function () {
-    console.log("WebSocket connection closed");
+  stream1Ws.onopen = function () {
+    console.log("Stream 1 connection opened");
+  };
+  stream0Ws.onmessage = function (event) {
+    jmuxer0.feed({
+      video: new Uint8Array(event.data),
+    });
+  };
+  stream1Ws.onmessage = function (event) {
+    jmuxer1.feed({
+      video: new Uint8Array(event.data),
+    });
+  };
+  stream0Ws.onclose = function () {
+    console.log("Stream 0 connection closed");
+  };
+  stream1Ws.onclose = function () {
+    console.log("Stream 1 connection closed");
   };
 }
 

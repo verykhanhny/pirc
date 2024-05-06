@@ -3,6 +3,7 @@ const ws = require("express-ws");
 const session = require("express-session");
 const crypto = require("crypto");
 const dotenv = require("dotenv");
+const dgram = require("dgram");
 
 // Middleware to check if user is logged in
 function requireLogin(req, res, next) {
@@ -28,6 +29,8 @@ function main() {
 
   // Store clients connection
   const clients = new Set();
+  let stream0ws = null;
+  let stream1ws = null;
 
   // Use sessions for tracking logged-in users
   app.use(
@@ -71,6 +74,7 @@ function main() {
             derivedKey.toString("hex") === process.env.admin_key
           ) {
             req.session.user = username; // Set user in session
+            console.log("Authenticated");
             res.send("Authenticated");
           } else {
             res.status(401).send("Unauthenticated");
@@ -86,6 +90,9 @@ function main() {
   });
   app.get("/index.js", requireLogin, (_, res) => {
     res.sendFile(__dirname + "/public/index.js");
+  });
+  app.get("/jmuxer.js", requireLogin, (_, res) => {
+    res.sendFile(__dirname + "/dist/jmuxer.js");
   });
 
   // WebSocket connection event
@@ -122,10 +129,74 @@ function main() {
     });
   });
 
-  // Start the server
-  app.listen(12345, () => {
-    console.log(`Server started on http://localhost:12345`);
+  // The video feed websocket
+  app.ws("/stream0", function connection(ws, req) {
+    console.log("Video stream 0 connected");
+    stream0ws = ws;
+
+    // When a client closes the connection
+    ws.on("close", function () {
+      console.log("Video stream 0 disconnected");
+      stream0ws = null;
+    });
   });
+
+  // The video feed websocket
+  app.ws("/stream1", function connection(ws, req) {
+    console.log("Video stream 1 connected");
+    stream1ws = ws;
+
+    // When a client closes the connection
+    ws.on("close", function () {
+      console.log("Video stream 1 disconnected");
+      stream1ws = null;
+    });
+  });
+
+  // Start the server
+  app.listen(process.env.port, () => {
+    console.log(`Server started on http://localhost:${process.env.port}`);
+  });
+
+  // Create a UDP servers
+  const udpServer0 = dgram.createSocket("udp4");
+  const udpServer1 = dgram.createSocket("udp4");
+
+  // Handle data received from the client
+  udpServer0.on("message", (data) => {
+    // You can process the received data here
+    if (stream0ws) stream0ws.send(data);
+  });
+  udpServer1.on("message", (data) => {
+    // You can process the received data here
+    if (stream1ws) stream1ws.send(data);
+  });
+
+  // Handle client disconnection
+  udpServer0.on("close", () => {
+    console.log("UDP client 0 disconnected.");
+  });
+  udpServer1.on("close", () => {
+    console.log("UDP client 1 disconnected.");
+  });
+
+  // Handle errors
+  udpServer0.on("error", (err) => {
+    console.error("UDP socket 0 error:", err);
+  });
+  udpServer0.on("error", (err) => {
+    console.error("UDP socket 1 error:", err);
+  });
+
+  udpServer0.on("listening", () => {
+    console.log(`UDP server 0 listening on localhost:${process.env.udp0}`);
+  });
+  udpServer1.on("listening", () => {
+    console.log(`UDP server 1 listening on localhost:${process.env.udp1}`);
+  });
+
+  udpServer0.bind(process.env.udp0);
+  udpServer1.bind(process.env.udp1);
 }
 
 main();
