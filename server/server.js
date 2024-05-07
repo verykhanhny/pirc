@@ -4,6 +4,16 @@ const session = require("express-session");
 const crypto = require("crypto");
 const dotenv = require("dotenv");
 const dgram = require("dgram");
+const net = require("net");
+
+dotenv.config();
+const app = express();
+ws(app);
+
+// Store clients connection
+const clients = new Set();
+let stream0ws = null;
+let stream1ws = null;
 
 // Middleware to check if user is logged in
 function requireLogin(req, res, next) {
@@ -22,16 +32,95 @@ function alreadyLogin(req, res, next) {
   }
 }
 
+// Cannot be used with createUdpServers
+function createTcpServers() {
+  // Create a TCP servers
+  const tcpServer0 = net.createServer((socket) => {
+    socket.on("connect", () => {
+      console.log("TCP client 0 connected.");
+    });
+
+    socket.on("data", (data) => {
+      if (stream0ws) stream0ws.send(data);
+    });
+
+    socket.on("end", () => {
+      console.log("TCP client 0 disconnected.");
+    });
+
+    socket.on("error", () => {
+      console.log("TCP client 0 error.");
+    });
+  });
+  const tcpServer1 = net.createServer((socket) => {
+    socket.on("connect", () => {
+      console.log("TCP client 1 connected.");
+    });
+
+    socket.on("data", (data) => {
+      if (stream1ws) stream1ws.send(data);
+    });
+
+    socket.on("end", () => {
+      console.log("TCP client 1 disconnected.");
+    });
+
+    socket.on("error", () => {
+      console.log("TCP client 1 error.");
+    });
+  });
+  tcpServer0.listen(process.env.sock0, () => {
+    console.log(`TCP server 0 listening on localhost:${process.env.sock0}`);
+  });
+  tcpServer1.listen(process.env.sock1, () => {
+    console.log(`TCP server 1 listening on localhost:${process.env.sock1}`);
+  });
+}
+
+// Cannot be used with createTcpServers
+function createUdpServers() {
+  // Create a UDP servers
+  const udpServer0 = dgram.createSocket("udp4");
+  const udpServer1 = dgram.createSocket("udp4");
+
+  // Handle data received from the client
+  udpServer0.on("message", (data) => {
+    // You can process the received data here
+    if (stream0ws) stream0ws.send(data);
+  });
+  udpServer1.on("message", (data) => {
+    // You can process the received data here
+    if (stream1ws) stream1ws.send(data);
+  });
+
+  // Handle client disconnection
+  udpServer0.on("close", () => {
+    console.log("UDP client 0 disconnected.");
+  });
+  udpServer1.on("close", () => {
+    console.log("UDP client 1 disconnected.");
+  });
+
+  // Handle errors
+  udpServer0.on("error", (err) => {
+    console.error("UDP socket 0 error:", err);
+  });
+  udpServer0.on("error", (err) => {
+    console.error("UDP socket 1 error:", err);
+  });
+
+  udpServer0.on("listening", () => {
+    console.log(`UDP server 0 listening on localhost:${process.env.sock0}`);
+  });
+  udpServer1.on("listening", () => {
+    console.log(`UDP server 1 listening on localhost:${process.env.sock1}`);
+  });
+
+  udpServer0.bind(process.env.sock0);
+  udpServer1.bind(process.env.sock1);
+}
+
 function main() {
-  dotenv.config();
-  const app = express();
-  ws(app);
-
-  // Store clients connection
-  const clients = new Set();
-  let stream0ws = null;
-  let stream1ws = null;
-
   // Use sessions for tracking logged-in users
   app.use(
     session({
@@ -90,9 +179,6 @@ function main() {
   });
   app.get("/index.js", requireLogin, (_, res) => {
     res.sendFile(__dirname + "/public/index.js");
-  });
-  app.get("/jmuxer.js", requireLogin, (_, res) => {
-    res.sendFile(__dirname + "/dist/jmuxer.js");
   });
 
   // WebSocket connection event
@@ -158,45 +244,10 @@ function main() {
     console.log(`Server started on http://localhost:${process.env.port}`);
   });
 
-  // Create a UDP servers
-  const udpServer0 = dgram.createSocket("udp4");
-  const udpServer1 = dgram.createSocket("udp4");
-
-  // Handle data received from the client
-  udpServer0.on("message", (data) => {
-    // You can process the received data here
-    if (stream0ws) stream0ws.send(data);
-  });
-  udpServer1.on("message", (data) => {
-    // You can process the received data here
-    if (stream1ws) stream1ws.send(data);
-  });
-
-  // Handle client disconnection
-  udpServer0.on("close", () => {
-    console.log("UDP client 0 disconnected.");
-  });
-  udpServer1.on("close", () => {
-    console.log("UDP client 1 disconnected.");
-  });
-
-  // Handle errors
-  udpServer0.on("error", (err) => {
-    console.error("UDP socket 0 error:", err);
-  });
-  udpServer0.on("error", (err) => {
-    console.error("UDP socket 1 error:", err);
-  });
-
-  udpServer0.on("listening", () => {
-    console.log(`UDP server 0 listening on localhost:${process.env.udp0}`);
-  });
-  udpServer1.on("listening", () => {
-    console.log(`UDP server 1 listening on localhost:${process.env.udp1}`);
-  });
-
-  udpServer0.bind(process.env.udp0);
-  udpServer1.bind(process.env.udp1);
+  // Start either the TCP or UDP server if streaming to browser
+  // Streaming to browser incurs another ~70 ms latency, so I'm not doing it
+  //createTcpServers();
+  //createUdpServers();
 }
 
 main();

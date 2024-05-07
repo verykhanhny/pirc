@@ -1,25 +1,23 @@
 function main() {
   // Create the WebSockets
-  const controlsWs = new WebSocket("wss://internal.khanhduong.dev:47653");
-  const stream0Ws = new WebSocket(
-    "wss://internal.khanhduong.dev:47653/stream0"
-  );
-  const stream1Ws = new WebSocket(
-    "wss://internal.khanhduong.dev:47653/stream1"
-  );
+  const controlsWs = new WebSocket("ws://localhost:47653");
+  const stream0Ws = new WebSocket("ws://localhost:47653/stream0");
+  const stream1Ws = new WebSocket("ws://localhost:47653/stream1");
   stream0Ws.binaryType = "arraybuffer";
   stream1Ws.binaryType = "arraybuffer";
   var jmuxer0 = new JMuxer({
     node: "videoPlayer0",
     mode: "video",
-    flushingTime: 1000,
-    fps: 30,
+    flushingTime: 0,
+    readFpsFromTrack: true,
+    maxDelay: 0,
   });
   var jmuxer1 = new JMuxer({
     node: "videoPlayer1",
     mode: "video",
-    flushingTime: 1000,
-    fps: 30,
+    flushingTime: 0,
+    readFpsFromTrack: true,
+    maxDelay: 0,
   });
 
   // Object to track pressed keys
