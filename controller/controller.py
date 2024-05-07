@@ -10,11 +10,13 @@ import time
 import dotenv
 import picamera2
 
+import customffmpegoutput
+
 
 # Get the salt from the server to append to the password
 def get_salt(base_url):
     try:
-        response = requests.get(f"https://{base_url}/salt")
+        response = requests.get(f"http://{base_url}/salt")
         response.raise_for_status()
         return response.text
     except Exception as e:
@@ -28,7 +30,7 @@ def auth(base_url, salt):
     login_data = {"username": os.environ.get("username"), "password": hashed_password}
 
     try:
-        response = requests.post(f"https://{base_url}/login", json=login_data)
+        response = requests.post(f"http://{base_url}/login", json=login_data)
         response.raise_for_status()
         print("Login successful!")
         return response.headers["set-cookie"]
@@ -37,13 +39,42 @@ def auth(base_url, salt):
 
 
 # Authenticate and connect to websocket
-def login(base_url, udp0_url, udp1_url):
+def login(base_url, sock0_url, sock1_url):
     try:
         salt = get_salt(base_url)
         cookie = auth(base_url, salt)
-        asyncio.run(connect(base_url, udp0_url, udp1_url, cookie))
+        asyncio.run(connect(base_url, sock0_url, sock1_url, cookie))
     except Exception as e:
         print(f"Error logging in: {e}")
+
+
+def start_cameras(sock0_url, sock1_url):
+    camera0 = picamera2.Picamera2(0)
+    camera1 = picamera2.Picamera2(1)
+
+    camera0.configure(
+        camera0.create_video_configuration(
+            main={"size": (640, 480), "format": "YUV420"}
+        )
+    )
+    camera1.configure(
+        camera1.create_video_configuration(
+            main={"size": (640, 480), "format": "YUV420"}
+        )
+    )
+
+    camera0.start_recording(
+        picamera2.encoders.Encoder(),
+        customffmpegoutput.CustomFfmpegOutput(
+            f"-f rawvideo -pixel_format yuv420p -video_size 640x480 -framerate 30 -i - -c:v libx264 -preset ultrafast -tune zerolatency -profile:v baseline -f h264 udp://{sock0_url}",
+        ),
+    )
+    camera1.start_recording(
+        picamera2.encoders.Encoder(),
+        customffmpegoutput.CustomFfmpegOutput(
+            f"-f rawvideo -pixel_format yuv420p -video_size 640x480 -framerate 30 -i - -c:v libx264 -preset ultrafast -tune zerolatency -profile:v baseline -f h264 udp://{sock1_url}",
+        ),
+    )
 
 
 # Handler for incoming commands from server
@@ -59,27 +90,18 @@ async def on_message(ws):
 
 
 # Connect a websocket to the server using the session cookie
-async def connect(base_url, udp0_url, udp1_url, cookie):
-    camera0 = picamera2.Picamera2(0)
-    camera1 = picamera2.Picamera2(1)
-    encoder0 = picamera2.encoders.H264Encoder(100000)
-    encoder1 = picamera2.encoders.H264Encoder(100000)
+async def connect(base_url, sock0_url, sock1_url, cookie):
 
-    camera0.configure(camera0.create_video_configuration(main={"size": (320, 240)}))
-    camera1.configure(camera1.create_video_configuration(main={"size": (320, 240)}))
     try:
-        camera0.start_recording(
-            encoder0,
-            picamera2.outputs.FfmpegOutput(f"-f h264 udp://{udp0_url}"),
-        )
-        camera1.start_recording(
-            encoder1,
-            picamera2.outputs.FfmpegOutput(f"-f h264 udp://{udp1_url}"),
-        )
+        # This is SLIGHTLY slower than starting the cameras natively...
+        # But only if we flush the buffer immediately, so in spotty connection,
+        # that could really add latency. Idk, for now, lets just use the native
+        # command
+        # start_cameras(sock0_url, sock1_url)
 
         print("Connecting to WebSocket...")
         async with websockets.connect(
-            f"wss://{base_url}", extra_headers={"Cookie": cookie}
+            f"ws://{base_url}", extra_headers={"Cookie": cookie}
         ) as ws:
             try:
                 print("WebSocket connection opened")
@@ -101,8 +123,8 @@ async def connect(base_url, udp0_url, udp1_url, cookie):
 if __name__ == "__main__":
     dotenv.load_dotenv()
     base_url = f"{os.environ.get('host')}:{os.environ.get('port')}"
-    udp0_url = f"{os.environ.get('sock')}:{os.environ.get('udp0')}"
-    udp1_url = f"{os.environ.get('sock')}:{os.environ.get('udp1')}"
-    login(base_url, udp0_url, udp1_url)
+    sock0_url = f"{os.environ.get('sockip')}:{os.environ.get('sock0')}"
+    sock1_url = f"{os.environ.get('sockip')}:{os.environ.get('sock1')}"
+    login(base_url, sock0_url, sock1_url)
     while True:
         time.sleep(3)
