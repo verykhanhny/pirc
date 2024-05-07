@@ -13,6 +13,7 @@ yarn-error.log
 
 # Python
 /venv
+*.pyc
 
 # IDEs and editors
 .idea/
