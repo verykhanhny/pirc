@@ -4,8 +4,11 @@
 # Usage: bash ffmpeg-play.sh <tcp or udp url>
 # Ex: bash ffmpeg-play.sh udp://0.0.0.0:12345
 ffplay \
+  -probesize 32 \
+  -analyzeduration 0 \
+  -sync ext \
   -fflags nobuffer \
   ${1}?listen \
-  -vf "setpts=N/30" \
+  -vf setpts=0 \
   -flags low_delay \
   -framedrop
