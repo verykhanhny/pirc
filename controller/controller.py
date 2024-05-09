@@ -66,13 +66,13 @@ def start_cameras(sock0_url, sock1_url):
     camera0.start_recording(
         picamera2.encoders.Encoder(),
         customffmpegoutput.CustomFfmpegOutput(
-            f"-f rawvideo -pixel_format yuv420p -video_size 640x480 -framerate 30 -i - -c:v libx264 -preset ultrafast -tune zerolatency -profile:v baseline -f h264 udp://{sock0_url}",
+            f"-itsoffset -0.3 -f pulse -sample_rate 12000 -thread_queue_size 1024 -i default -f rawvideo -pixel_format yuv420p -video_size 640x480 -framerate 30 -i - -c:a aac -b:a 32000 -profile:a aac_low -c:v libx264 -preset ultrafast -tune zerolatency -profile:v baseline -f mpegts udp://{sock0_url}",
         ),
     )
     camera1.start_recording(
         picamera2.encoders.Encoder(),
         customffmpegoutput.CustomFfmpegOutput(
-            f"-f rawvideo -pixel_format yuv420p -video_size 640x480 -framerate 30 -i - -c:v libx264 -preset ultrafast -tune zerolatency -profile:v baseline -f h264 udp://{sock1_url}",
+            f"-f rawvideo -pixel_format yuv420p -video_size 640x480 -framerate 30 -i - -c:v libx264 -preset ultrafast -tune zerolatency -profile:v baseline -f mpegts udp://{sock1_url}",
         ),
     )
 
@@ -97,7 +97,7 @@ async def connect(base_url, sock0_url, sock1_url, cookie):
         # But only if we flush the buffer immediately, so in spotty connection,
         # that could really add latency. Idk, for now, lets just use the native
         # command
-        # start_cameras(sock0_url, sock1_url)
+        start_cameras(sock0_url, sock1_url)
 
         print("Connecting to WebSocket...")
         async with websockets.connect(
